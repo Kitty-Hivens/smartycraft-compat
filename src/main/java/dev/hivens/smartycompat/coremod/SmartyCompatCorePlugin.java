@@ -30,6 +30,7 @@ public final class SmartyCompatCorePlugin implements IFMLLoadingPlugin {
             "dev.hivens.smartycompat.coremod.AdvancedSolarSlotApiTransformer",
             "dev.hivens.smartycompat.coremod.BatchCrafterSlotFilterTransformer",
             "dev.hivens.smartycompat.coremod.InscriberMatchTransformer",
+            "dev.hivens.smartycompat.coremod.CacheOffHandTransformer",
             "dev.hivens.smartycompat.coremod.RailcraftCallerClassTransformer"
         };
     }

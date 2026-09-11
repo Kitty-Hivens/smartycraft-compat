@@ -66,6 +66,14 @@ That reaches a client. The inscriber's `isItemValidForSlot` runs through `isVali
 
 BdLib's comparison is used all over AE2 Stuff and by other mods that ship BdLib. Only the inscriber's use of it differs on the server, so only that package is touched.
 
+### Thermal Expansion
+
+The Cache hands a stack back when a player interacts with it, and the published release always writes that stack into the selected hotbar slot, whichever hand did the interacting. Reach for the Cache with the off hand and the main hand's item is what gets replaced. The server's copy branches on the hand and writes the off hand slot when that is the one in use.
+
+`BlockTEBase.onBlockActivated` reaches the delegate without a side check, so an unpatched client predicts the wrong slot and shows the swap in the wrong place until the server's next window update corrects it.
+
+`CacheOffHandTransformer` pushes the hand, which the method already holds in local 5, and turns the inventory write into a call that takes it. The branch itself is ordinary Java. One extra operand, no new jump targets, nothing to recompute.
+
 ### Railcraft
 
 Railcraft asks who called it so it can register a `DataParameter` against that entity class:
@@ -122,7 +130,7 @@ The calculation changes if a patch grows past rewriting instructions into carryi
 Needs a Java 8 JDK (a JRE is not enough: ForgeGradle refuses it).
 
 ```
-JAVA_HOME=/path/to/jdk8 ./gradlew build -PmodVersion=0.4.0
+JAVA_HOME=/path/to/jdk8 ./gradlew build -PmodVersion=0.5.0
 ```
 
 The jar lands in `build/libs`.
