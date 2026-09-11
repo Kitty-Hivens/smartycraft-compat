@@ -56,6 +56,16 @@ return recipe.matches(crafting, world)
 
 closing the gap between "any stack this recipe would accept here" and "the stack this cached operation was set up for". `accepts` branches on `world.isRemote` to pick its recipe, so the client evaluates it for slot validity in the open GUI, and without the patch the client offers slots the server will reject.
 
+### AE2 Stuff
+
+The published release asks BdLib whether two stacks are the same item, and BdLib finishes with `ItemStack.areItemStackTagsEqual`, which wants equal NBT *and* compatible capabilities. The server's copy compares NBT alone, so it accepts pairs the published one turns away.
+
+That reaches a client. The inscriber's `isItemValidForSlot` runs through `isValidPartialRecipe` to this comparison, and slot validity is evaluated on both sides, so an unpatched client refuses ingredients the server would have taken.
+
+`InscriberMatchTransformer` swaps one instruction at each of the seven call sites inside the inscriber's package: the `invokevirtual` on BdLib's singleton becomes an `invokestatic` on our own comparison, which takes that singleton as an ignored leading parameter so the operand stack is left exactly as it was. The comparison itself is ordinary Java, checked against the server's branch structure over every combination of item, subtype flag, damage and tag.
+
+BdLib's comparison is used all over AE2 Stuff and by other mods that ship BdLib. Only the inscriber's use of it differs on the server, so only that package is touched.
+
 ### Railcraft
 
 Railcraft asks who called it so it can register a `DataParameter` against that entity class:
@@ -82,6 +92,23 @@ Not everything is code. IC2 reads `config/ic2/<name>.ini` from the instance dire
 - crushed ores, purified crushed ores, netherrack, ender pearls, ender eyes and emeralds no longer macerate at all
 - iridium is keyed on `ic2:misc_resource#iridium_ore` rather than the `gemIridium` ore dictionary entry, and Applied Energistics certus quartz, nether quartz and fluix crystals are added
 
+## What it deliberately leaves alone
+
+Most of the rebuilt jars turned out to need nothing. Comparing each against the release it was built from, method by method and by what each method actually does rather than by its bytes, gives:
+
+| Mod | Classes byte-identical to the release | Verdict |
+|---|---|---|
+| Iron Chests | 100% | only resources differ, and every translated string matches |
+| Loot Capacitor Tooltips | 100% | same |
+| Hats | 98.5% | one class rebuilt, reads a field where the release calls the getter that returns it |
+| Hat Stand | 70% | three classes rebuilt, no method does anything different |
+| Applied Energistics 2 | 98.6% | twenty-one classes carry upstream fixes, none of which changes what crosses the wire |
+| Gravitation Suite | 75.9% | the wrench gained integrations with other mods, all of it acted on by the server |
+
+Applied Energistics was the one worth checking closely, because the pattern terminal's buttons send a value to the server. Both builds send the same two literals, the release through named constants and the server's copy inlined, so there is nothing to reconcile.
+
+Every one of these releases also resolves cleanly against the rest of the pack. Advanced Solar Panels is the single exception, and its three unresolved references are the ones patched above.
+
 ## Why no mixins
 
 Mixin is available in these packs, through MixinBooter on Forge and built in under Cleanroom, so this is a choice rather than a constraint.
@@ -95,7 +122,7 @@ The calculation changes if a patch grows past rewriting instructions into carryi
 Needs a Java 8 JDK (a JRE is not enough: ForgeGradle refuses it).
 
 ```
-JAVA_HOME=/path/to/jdk8 ./gradlew build -PmodVersion=0.3.0
+JAVA_HOME=/path/to/jdk8 ./gradlew build -PmodVersion=0.4.0
 ```
 
 The jar lands in `build/libs`.
