@@ -1,0 +1,16 @@
+[
+  {
+    "modid": "smrtgalaxycompat",
+    "name": "SmartyCraft Galaxy Compat",
+    "description": "Client-side compatibility patches that let a pack built from genuine upstream mod releases join a SmartyCraft server running rebuilt, relabelled copies of them. Currently: drops Ender IO's own version-equality check on the server's mod list.",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "https://github.com/Kitty-Hivens/smartycraft-galaxy-compat",
+    "updateUrl": "",
+    "authorList": ["Kitty-Hivens"],
+    "credits": "",
+    "logoFile": "icon.png",
+    "screenshots": [],
+    "dependencies": ["forge"]
+  }
+]

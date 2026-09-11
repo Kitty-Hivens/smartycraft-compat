@@ -1,0 +1,51 @@
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '2.3-SNAPSHOT', changing: true
+    }
+}
+
+apply plugin: 'net.minecraftforge.gradle.forge'
+
+group = 'dev.hivens.galaxycompat'
+version = project.hasProperty('modVersion') ? project.modVersion : '0.1.0'
+archivesBaseName = 'smartycraft-galaxy-compat'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+minecraft {
+    version = '1.12.2-14.23.5.2847'
+    runDir = 'run'
+    mappings = 'snapshot_20171003'
+    makeObfSourceJar = false
+}
+
+processResources {
+    inputs.property 'version', project.version
+    inputs.property 'mcversion', project.minecraft.version
+
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+        expand 'version': project.version, 'mcversion': project.minecraft.version
+    }
+
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}
+
+// Both attributes together, so FML loads the coremod AND scans the jar
+// for the @Mod class: the transformers do the work, the mod container
+// only exists so the mod shows up in the in-game list.
+jar {
+    manifest {
+        attributes(
+            'FMLCorePlugin'               : 'dev.hivens.galaxycompat.coremod.GalaxyCompatCorePlugin',
+            'FMLCorePluginContainsFMLMod' : 'true'
+        )
+    }
+}
