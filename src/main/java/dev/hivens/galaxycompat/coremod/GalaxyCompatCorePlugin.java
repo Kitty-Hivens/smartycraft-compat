@@ -24,7 +24,8 @@ public final class GalaxyCompatCorePlugin implements IFMLLoadingPlugin {
     @Override
     public String[] getASMTransformerClass() {
         return new String[] {
-            "dev.hivens.galaxycompat.coremod.EnderIOVersionCheckTransformer"
+            "dev.hivens.galaxycompat.coremod.EnderIOVersionCheckTransformer",
+            "dev.hivens.galaxycompat.coremod.AdvancedSolarSlotApiTransformer"
         };
     }
 
