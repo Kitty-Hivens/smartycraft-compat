@@ -116,7 +116,7 @@ For Galaxy the mods whose reported version has to differ from the genuine releas
 
 Industrial needs the same minus Ender IO and Matter Overdrive. Everything else in both packs reports the same string either way.
 
-One entry needs care: Galaxy's server registers `micdoodlecore` with an empty version, and an omitted entry reads as the mod being absent rather than as having no version. The generated config keeps it. hidemymods skips entries whose version is empty, so that entry does not currently survive to the wire.
+One entry needs care: Galaxy's server registers `micdoodlecore` with an empty version, and an omitted entry reads as the mod being absent rather than as having no version. The generated config keeps it, and hidemymods carries an empty version through to the wire rather than treating the entry as malformed.
 
 ### IC2 recipes
 
