@@ -1,16 +1,20 @@
 [
   {
-    "modid": "smrtgalaxycompat",
-    "name": "SmartyCraft Galaxy Compat",
-    "description": "Client-side compatibility patches that let a pack built from genuine upstream mod releases join a SmartyCraft server running rebuilt, relabelled copies of them. Currently: drops Ender IO's own version-equality check on the server's mod list.",
+    "modid": "smrtcompat",
+    "name": "SmartyCraft Compat",
+    "description": "Client-side compatibility patches that let a pack built from genuine upstream mod releases run against SmartyCraft servers: drops Ender IO's own version-equality check, ports Advanced Solar Panels onto the IndustrialCraft 2 API the packs ship, carries the server's batch crafter slot filter, and corrects Railcraft's caller lookup on modern JVMs.",
     "version": "${version}",
     "mcversion": "${mcversion}",
-    "url": "https://github.com/Kitty-Hivens/smartycraft-galaxy-compat",
+    "url": "https://github.com/Kitty-Hivens/smartycraft-compat",
     "updateUrl": "",
-    "authorList": ["Kitty-Hivens"],
+    "authorList": [
+      "Kitty-Hivens"
+    ],
     "credits": "",
     "logoFile": "icon.png",
     "screenshots": [],
-    "dependencies": ["forge"]
+    "dependencies": [
+      "forge"
+    ]
   }
 ]

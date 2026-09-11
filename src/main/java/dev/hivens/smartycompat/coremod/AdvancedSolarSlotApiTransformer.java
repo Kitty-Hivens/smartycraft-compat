@@ -1,4 +1,4 @@
-package dev.hivens.galaxycompat.coremod;
+package dev.hivens.smartycompat.coremod;
 
 import net.minecraft.launchwrapper.IClassTransformer;
 import org.objectweb.asm.ClassReader;

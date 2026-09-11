@@ -10,9 +10,9 @@ buildscript {
 
 apply plugin: 'net.minecraftforge.gradle.forge'
 
-group = 'dev.hivens.galaxycompat'
+group = 'dev.hivens.smartycompat'
 version = project.hasProperty('modVersion') ? project.modVersion : '0.1.0'
-archivesBaseName = 'smartycraft-galaxy-compat'
+archivesBaseName = 'smartycraft-compat'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -44,7 +44,7 @@ processResources {
 jar {
     manifest {
         attributes(
-            'FMLCorePlugin'               : 'dev.hivens.galaxycompat.coremod.GalaxyCompatCorePlugin',
+            'FMLCorePlugin'               : 'dev.hivens.smartycompat.coremod.SmartyCompatCorePlugin',
             'FMLCorePluginContainsFMLMod' : 'true'
         )
     }
