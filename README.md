@@ -95,7 +95,32 @@ The patch is confined to Railcraft's own class on purpose. Rewriting every calle
 
 ## Carried data
 
-Not everything is code. IC2 reads `config/ic2/<name>.ini` from the instance directory and falls back to the jar asset only when that file is absent or unreadable, so the server's recipe set transfers as a plain file. [`pack/config/ic2/macerator.ini`](pack/config/ic2/macerator.ini) is that file, copied verbatim out of the server's jar, and belongs in the pack as an asset rather than in this jar. It differs from upstream in four ways:
+Not everything is code.
+
+### The mod list the client reports
+
+Forge's handshake check is not symmetric. A client accepts whatever the server reports: `DefaultNetworkChecker.checkCompatible` returns immediately when asked about the server side, which is why only a mod with a handler of its own, like Ender IO's, can refuse from the client. The server is strict in the other direction. `NetworkModHolder.acceptVersion` falls back to `container.getVersion().equals(remote)` when a mod declares no `acceptableRemoteVersions`, so a client reporting a genuine version where the server expects a relabelled one is rejected, mod by mod.
+
+Every pack currently passes because it ships the server's own jars. Installing the published releases instead means the reported list has to say what the server expects, which is what [hidemymods](https://github.com/Kitty-Hivens/hidemymods) is for. It replaces the outbound list wholesale, so the config has to name every mod the server requires rather than only the relabelled ones. [`pack/hidemymods-spoof/`](pack/hidemymods-spoof/) holds one per pack, generated from what each server advertises in its own status ping, to be installed as `hidemymods-spoof.json` in the instance directory.
+
+For Galaxy the mods whose reported version has to differ from the genuine release are:
+
+| mod id | genuine release declares | server expects |
+|---|---|---|
+| `enderio` and its ten sibling ids | `5.2.61` | `5.2.0` |
+| `quark` | `r1.6-179` | `r1.6-180` |
+| `ae2stuff` | `0.7.0.4` | `0.7.0.5-DEV` |
+| `autoreglib` | `1.3-32` | `1.3-33` |
+| `ironchest` | `1.12.2-7.0.67.844` | `1.12.2-7.0.72.847` |
+| `matteroverdrive` | `0.7.0.16` | `0.7.0.0` |
+
+Industrial needs the same minus Ender IO and Matter Overdrive. Everything else in both packs reports the same string either way.
+
+One entry needs care: Galaxy's server registers `micdoodlecore` with an empty version, and an omitted entry reads as the mod being absent rather than as having no version. The generated config keeps it. hidemymods skips entries whose version is empty, so that entry does not currently survive to the wire.
+
+### IC2 recipes
+
+IC2 reads `config/ic2/<name>.ini` from the instance directory and falls back to the jar asset only when that file is absent or unreadable, so the server's recipe set transfers as a plain file. [`pack/config/ic2/macerator.ini`](pack/config/ic2/macerator.ini) is that file, copied verbatim out of the server's jar, and belongs in the pack as an asset rather than in this jar. It differs from upstream in four ways:
 
 - plates macerate to eight small dust instead of one full dust, for iron, copper, tin, gold, lead, bronze, obsidian and lapis
 - dense plates yield eight dust instead of nine, and the commented out dense steel entry is live, mapping to iron dust
