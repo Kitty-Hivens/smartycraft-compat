@@ -23,12 +23,14 @@ A third kind has nothing to do with the server. A mod written against an API the
 Ender IO's handler compiles down to
 
 ```java
-return remote.containsKey("enderio") && "5.2.61".equals(remote.get("enderio"));
+return remote.keySet().contains("enderio") && "5.2.61".equals(remote.get("enderio"));
 ```
 
 with its own version inlined as a constant. Against a server answering `5.2.0` the client refuses by itself, before the server's opinion matters at all.
 
-`EnderIOVersionCheckTransformer` replaces the body with the presence half of the original test. The other side must still have Ender IO, only the version equality is dropped. A blind `true` would also accept a server without the mod, which the original never did.
+Ender IO ships as eleven mod ids, and ten of its classes carry a handler of their own, each asking after the module it belongs to: the base mod, the conduits, the three conduit integrations, the two Tinkers integrations, the Forestry integration, the machines and the power tools. Patching only the first leaves nine others to refuse the connection.
+
+`EnderIOVersionCheckTransformer` rewrites every class in Ender IO's package tree that declares the method, and reads the mod id each handler demands out of its own body rather than assuming they all ask after the base mod. The body becomes the presence half of the original test: the other side must still have that module, only the version equality is dropped. A blind `true` would also accept a server without it, which the original never did.
 
 ### Advanced Solar Panels
 
@@ -130,7 +132,7 @@ The calculation changes if a patch grows past rewriting instructions into carryi
 Needs a Java 8 JDK (a JRE is not enough: ForgeGradle refuses it).
 
 ```
-JAVA_HOME=/path/to/jdk8 ./gradlew build -PmodVersion=0.5.0
+JAVA_HOME=/path/to/jdk8 ./gradlew build -PmodVersion=0.6.0
 ```
 
 The jar lands in `build/libs`.
