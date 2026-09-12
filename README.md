@@ -110,7 +110,9 @@ Patching the published release this way produces a class identical to the server
 
 The server draws the sender's head, hat layer and all, beside each chat message. The published release has no such thing, so a client running it shows chat with the heads simply missing and nothing to explain why.
 
-The name has nowhere obvious to travel. A chat message arrives as formatted text and the formatting is the server's own, so the author cannot be read back out of it. The server's build smuggles it instead, in the shift-click event of the message's style under the `CHANGE_PAGE` action, which nothing else in chat uses. `ChatHeadsTransformer` reads the same field, so the heads light up on a server that sets it and stay dark everywhere else.
+The name has nowhere obvious to travel. A chat message arrives as formatted text and the formatting is the server's own. The server's build sends it outright instead, in the shift-click event of the message's style under the `CHANGE_PAGE` action, which nothing else in chat uses. `ChatHeadsTransformer` reads the same field first, because a name the server states is not a guess.
+
+Not every SmartyCraft server sets it. The one the Industrial pack connects to does not, which is presumably why that pack never shipped the chat mod at all, while Galaxy, RPG, Nevermine and TechnoMagic did. So when the field is absent the sender is read out of the message instead: only the segment before the first `:` or `>`, matched against the tab list, longest name winning. That segment is where every chat format puts the sender and where nothing else goes, which is what keeps a head off "someone joined the game" and off a message that merely mentions a player.
 
 Five call sites, no new branches. The author is read once per message at the top of the method that splits it into lines. The two list insertions in that method become calls that tag the line being added, told apart by the field each one reads rather than by their order, because only the first line of a wrapped message carries the head. In the drawing loop the text call and the background call take the line as an extra argument and decide for themselves.
 

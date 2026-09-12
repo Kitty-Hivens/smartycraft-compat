@@ -24,14 +24,18 @@ import java.util.WeakHashMap;
  * build does.
  *
  * The name has nowhere obvious to travel: a chat message arrives as formatted
- * text and the formatting is the server's own, so there is no reading the author
- * back out of it. The server's build smuggles it instead, in the shift-click
- * event of the message's style under the {@code CHANGE_PAGE} action, which
- * nothing in chat otherwise uses. That is what this reads, so it lights up only
- * on a server that sets it and stays silent everywhere else.
+ * text, and the formatting is the server's own. The server's build sends it
+ * outright instead, in the shift-click event of the message's style under the
+ * {@code CHANGE_PAGE} action, which nothing in chat otherwise uses. That is read
+ * first, because a name the server states is not a guess.
  *
  * The head is only drawn for a name the tab list knows, since the skin comes
  * from there.
+ *
+ * A server that does not send the name at all is not out of reach: the sender
+ * is then read out of the message text, matched against the tab list. That is a
+ * guess and is only made when the exact answer is absent, so a server that names
+ * the sender outright is always believed over it.
  *
  * A message wraps into several lines and the head belongs to the message, so
  * only the first line carries it. The state between the two is held here rather
@@ -84,7 +88,58 @@ public final class ChatHeads {
         ClickEvent event = shiftClickEvent(style);
         if (event != null && event.getAction() == ClickEvent.Action.CHANGE_PAGE) {
             pending = event.getValue();
+            return;
         }
+        pending = senderInText(message);
+    }
+
+    /**
+     * The sender read out of the message itself, for a server that sends no name
+     * of its own.
+     *
+     * Only the part before the first `:` or `>` is looked at, which is where every
+     * chat format puts the sender and where nothing else goes. That is what keeps
+     * a head off "someone joined the game" and off a message that merely mentions
+     * a player: neither has a sender segment at all. A prefix the server adds in
+     * front, a rank or a channel tag, does not get in the way, since the name only
+     * has to appear somewhere in that segment.
+     *
+     * The longest matching name wins, so a player called Bob does not take the
+     * head of a message from Bobby.
+     *
+     * Guessing from text is the weaker answer and is only reached when the exact
+     * one is absent. A server that names the sender outright is always believed
+     * over this.
+     */
+    private static String senderInText(ITextComponent message) {
+        String text = message.getUnformattedText();
+        if (text == null || text.isEmpty()) {
+            return null;
+        }
+        int colon = text.indexOf(':');
+        int angle = text.indexOf('>');
+        int end = colon < 0 ? angle : angle < 0 ? colon : Math.min(colon, angle);
+        if (end <= 0) {
+            return null;
+        }
+        String sender = text.substring(0, end);
+
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc == null || mc.player == null || mc.player.connection == null) {
+            return null;
+        }
+        String best = null;
+        for (NetworkPlayerInfo info : mc.player.connection.getPlayerInfoMap()) {
+            GameProfile profile = info.getGameProfile();
+            String name = profile == null ? null : profile.getName();
+            if (name == null || name.isEmpty() || !sender.contains(name)) {
+                continue;
+            }
+            if (best == null || name.length() > best.length()) {
+                best = name;
+            }
+        }
+        return best;
     }
 
     /**
