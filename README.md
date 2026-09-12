@@ -106,6 +106,20 @@ The notification is a plain insert after the existing `onTake`, with no branch a
 
 Patching the published release this way produces a class identical to the server's, instruction for instruction, apart from the condition being a call rather than inlined.
 
+### Better Chat
+
+The server draws the sender's head, hat layer and all, beside each chat message. The published release has no such thing, so a client running it shows chat with the heads simply missing and nothing to explain why.
+
+The name has nowhere obvious to travel. A chat message arrives as formatted text and the formatting is the server's own, so the author cannot be read back out of it. The server's build smuggles it instead, in the shift-click event of the message's style under the `CHANGE_PAGE` action, which nothing else in chat uses. `ChatHeadsTransformer` reads the same field, so the heads light up on a server that sets it and stay dark everywhere else.
+
+Five call sites, no new branches. The author is read once per message at the top of the method that splits it into lines. The two list insertions in that method become calls that tag the line being added, told apart by the field each one reads rather than by their order, because only the first line of a wrapped message carries the head. In the drawing loop the text call and the background call take the line as an extra argument and decide for themselves.
+
+The author cannot be kept on the line the way the server's build keeps it: that build subclasses `ChatLine` to hold it, and giving a foreign class a field is not something a call-site rewrite can do. A weak map from line to author holds it here instead, so a line that scrolls out of the hundred chat keeps takes its entry with it.
+
+Two things are deliberately not copied. The server's build widens the chat background by the head's width on every line, so a server that sets no author still gets a background wider than vanilla; here the widening follows the head. And its hit test is left byte for byte as the release has it, which is worth saying plainly: **the quick reply is not part of this patch**. Whatever a click does comes from the click event the server attaches to the message, and that works with the published release untouched. What the release loses is the head and the space made for it.
+
+The shift-click event is a Forge addition that arrived during 1.12.2 rather than at the start, and the packs run a build newer than the one this mod compiles against. It is asked for by name once and remembered, so a client on the older side loads the mod fine and simply draws no heads.
+
 ### Railcraft
 
 Railcraft asks who called it so it can register a `DataParameter` against that entity class:
@@ -195,6 +209,8 @@ Every one of these releases also resolves cleanly against the rest of the pack. 
 ## Why no mixins
 
 Mixin is available in these packs, through MixinBooter on Forge and built in under Cleanroom, so this is a choice rather than a constraint.
+
+One of them now carries real logic: the chat heads keep a map, resolve a skin and draw. That is the shape where mixin earns its keep, and it stays out here only because it would be the tenth patch in a jar whose other nine are call-site rewrites.
 
 Most of the patches here are a poor fit for it. Two are descriptor and owner rewrites at a call site, which is the one thing mixin deliberately does not express. One splices a conjunction into a method that has to keep the enclosing try/finally and its stack map frames exactly as compiled. One replaces a method body outright, which mixin would do slightly more legibly, but not enough to take on a load-time dependency for.
 
