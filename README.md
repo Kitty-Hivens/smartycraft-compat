@@ -76,6 +76,16 @@ The Cache hands a stack back when a player interacts with it, and the published 
 
 `CacheOffHandTransformer` pushes the hand, which the method already holds in local 5, and turns the inventory write into a call that takes it. The branch itself is ordinary Java. One extra operand, no new jump targets, nothing to recompute.
 
+### Twilight Forest
+
+The goblin uncrafting table's result slot clears the uncrafting matrix and charges the experience cost, then hands off to the vanilla crafting slot. The published release stops there. The server's copy halves whatever each assembly slot still holds once that has returned, so the same ingredients cannot be drawn twice.
+
+It does that only on the uncrafting path. A result equal to what a plain recipe would produce is ordinary crafting and is left alone.
+
+Container slots are evaluated on both sides, so without this the client predicts an assembly matrix the server does not agree with.
+
+`UncraftingTakeTransformer` appends to the tail call rather than rebuilding the method. The published release reaches its single `super.onTake` from both paths, so the flag the method has already computed is pushed alongside the result and the matrix, and the decision is made in ordinary Java. Three pushes and one call, no new jump targets. The flag is located rather than assumed: it is the local feeding the one `IFEQ` a plain load reaches.
+
 ### Railcraft
 
 Railcraft asks who called it so it can register a `DataParameter` against that entity class:
@@ -92,6 +102,15 @@ Depth 2 is correct for the method it was written against. That method is gone fr
 The replacement was checked against the real thing: on a JDK 8, calling `sun.reflect.Reflection.getCallerClass(n)` and this one from the same frame returns the same class at depths 1, 2 and 3.
 
 The patch is confined to Railcraft's own class on purpose. Rewriting every caller lookup in the game would also catch mods already built around the shifted numbering, and turn their working code into the bug this removes.
+
+### Containers the server hardened that are not carried yet
+
+The same shape recurs across the packs: the server patched the containers that are known duplication routes. Two are carried above, in IndustrialCraft 2 and AE2 Stuff, and a third here. Two more are measured but not ported, because both need a branch inside an existing method rather than an append, which would mean recomputing stack map frames from inside a transformer.
+
+- **Thaumcraft** finds the hand mirror in the off hand as well as the main hand when building `ContainerHandMirror`, and closes the screen from `onCraftMatrixChanged` once the mirror is gone. An unpatched client opening the mirror from the off hand has no mirror in its own container.
+- **ExtraBotany** handles `ClickType.SWAP` in `ContainerHandbag.slotClick`, which is the hotbar-key swap that otherwise duplicates the bag, and calls `detectAndSendChanges` from `transferStackInSlot`.
+
+Both are client prediction only. The server holds the authoritative inventory and corrects the client on its next window update, so the symptom is a wrong-looking slot rather than a duplicated item.
 
 ## Carried data
 
@@ -157,7 +176,7 @@ The calculation changes if a patch grows past rewriting instructions into carryi
 Needs a Java 8 JDK (a JRE is not enough: ForgeGradle refuses it).
 
 ```
-JAVA_HOME=/path/to/jdk8 ./gradlew build -PmodVersion=0.6.0
+JAVA_HOME=/path/to/jdk8 ./gradlew build -PmodVersion=0.7.0
 ```
 
 The jar lands in `build/libs`.
