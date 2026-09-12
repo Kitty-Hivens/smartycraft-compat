@@ -176,7 +176,7 @@ The calculation changes if a patch grows past rewriting instructions into carryi
 Needs a Java 8 JDK (a JRE is not enough: ForgeGradle refuses it).
 
 ```
-JAVA_HOME=/path/to/jdk8 ./gradlew build -PmodVersion=0.7.0
+JAVA_HOME=/path/to/jdk8 ./gradlew build -PmodVersion=1.0.0
 ```
 
 The jar lands in `build/libs`.
