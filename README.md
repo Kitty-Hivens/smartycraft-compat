@@ -86,6 +86,14 @@ Container slots are evaluated on both sides, so without this the client predicts
 
 `UncraftingTakeTransformer` appends to the tail call rather than rebuilding the method. The published release reaches its single `super.onTake` from both paths, so the flag the method has already computed is pushed alongside the result and the matrix, and the decision is made in ordinary Java. Three pushes and one call, no new jump targets. The flag is located rather than assumed: it is the local feeding the one `IFEQ` a plain load reaches.
 
+### Thaumcraft
+
+The hand mirror container takes whatever sits in the selected hotbar slot and calls it the mirror. Open the mirror from the off hand and the container is built around the main hand's item, so the client shows a container that has nothing to do with what the player used. The server's copy looks in the off hand when the main hand is not holding one.
+
+`HandMirrorOffHandTransformer` inserts straight after the constructor stores what it read from the selected slot: the field, the inventory and the mod's own mirror class go on the stack and the decision is made in ordinary Java. Nothing here is named by a mapping. The store is found by following the only no-argument `InventoryPlayer` call returning an `ItemStack`, the field by the store it feeds, and the mirror class by a call the class already makes into it.
+
+One half is deliberately left out. The server also nulls the field when neither hand holds a mirror, and closes the screen on that null elsewhere. The published release's other methods have never had to expect a null there, so carrying it would trade a cosmetic mismatch for a crash. A miss answers with the empty stack instead, which is what the release already puts there for an empty hand.
+
 ### Railcraft
 
 Railcraft asks who called it so it can register a `DataParameter` against that entity class:
@@ -105,12 +113,11 @@ The patch is confined to Railcraft's own class on purpose. Rewriting every calle
 
 ### Containers the server hardened that are not carried yet
 
-The same shape recurs across the packs: the server patched the containers that are known duplication routes. Two are carried above, in IndustrialCraft 2 and AE2 Stuff, and a third here. Two more are measured but not ported, because both need a branch inside an existing method rather than an append, which would mean recomputing stack map frames from inside a transformer.
+The same shape recurs across the packs: the server patched the containers that are known duplication routes. Three are carried above, in IndustrialCraft 2, AE2 Stuff and Twilight Forest, and Thaumcraft's with them. One more is measured but not ported, because it needs a branch inside an existing method rather than an append, which would mean recomputing stack map frames from inside a transformer.
 
-- **Thaumcraft** finds the hand mirror in the off hand as well as the main hand when building `ContainerHandMirror`, and closes the screen from `onCraftMatrixChanged` once the mirror is gone. An unpatched client opening the mirror from the off hand has no mirror in its own container.
 - **ExtraBotany** handles `ClickType.SWAP` in `ContainerHandbag.slotClick`, which is the hotbar-key swap that otherwise duplicates the bag, and calls `detectAndSendChanges` from `transferStackInSlot`.
 
-Both are client prediction only. The server holds the authoritative inventory and corrects the client on its next window update, so the symptom is a wrong-looking slot rather than a duplicated item.
+It is client prediction only. The server holds the authoritative inventory and corrects the client on its next window update, so the symptom is a wrong-looking slot rather than a duplicated item.
 
 ## Carried data
 
@@ -176,7 +183,7 @@ The calculation changes if a patch grows past rewriting instructions into carryi
 Needs a Java 8 JDK (a JRE is not enough: ForgeGradle refuses it).
 
 ```
-JAVA_HOME=/path/to/jdk8 ./gradlew build -PmodVersion=1.0.0
+JAVA_HOME=/path/to/jdk8 ./gradlew build -PmodVersion=1.1.0
 ```
 
 The jar lands in `build/libs`.

@@ -2,7 +2,7 @@
   {
     "modid": "smrtcompat",
     "name": "SmartyCraft Compat",
-    "description": "Client-side compatibility patches that let a pack built from genuine upstream mod releases run against SmartyCraft servers. Drops Ender IO's own version checks across all eleven of its mod ids, ports Advanced Solar Panels onto the IndustrialCraft 2 API the packs ship, carries the hardened slot filters of the IC2 batch crafter, the AE2 Stuff inscriber and the Twilight Forest uncrafting table, carries Thermal Expansion's off hand handling, and corrects Railcraft's caller lookup on modern JVMs.",
+    "description": "Client-side compatibility patches that let a pack built from genuine upstream mod releases run against SmartyCraft servers. Drops Ender IO's own version checks across all eleven of its mod ids, ports Advanced Solar Panels onto the IndustrialCraft 2 API the packs ship, carries the hardened slot filters of the IC2 batch crafter, the AE2 Stuff inscriber and the Twilight Forest uncrafting table, finds the Thaumcraft hand mirror in either hand, carries Thermal Expansion's off hand handling, and corrects Railcraft's caller lookup on modern JVMs.",
     "version": "${version}",
     "mcversion": "${mcversion}",
     "url": "https://github.com/Kitty-Hivens/smartycraft-compat",
