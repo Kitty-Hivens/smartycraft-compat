@@ -139,6 +139,31 @@ The replacement was checked against the real thing: on a JDK 8, calling `sun.ref
 
 The patch is confined to Railcraft's own class on purpose. Rewriting every caller lookup in the game would also catch mods already built around the shifted numbering, and turn their working code into the bug this removes.
 
+### Damage Indicators
+
+On joining, the server tells the client which of the mod's features it allows. The client answers by writing three lines into chat:
+
+```java
+public DIPermissions onMessage(DIPermissions message, MessageContext ctx) {
+    Handler.processPermissions(DIMod.proxy.getPlayer(), (byte) 0);
+    return null;
+}
+
+public static void processPermissions(EntityPlayer player, byte toggles) {
+    ...
+    player.sendMessage(new TextComponentString("[DamageIndicators] ...Mouseovers enabled."));
+    // and five more, none of them asking whether there is a player
+}
+```
+
+A mod's channel handler runs on the network thread the moment its packet lands, which is during the handshake, before the client has built its player. `getPlayer()` hands back nothing and the send is made on it.
+
+That is not a lost chat line. An exception out of a channel handler is a fatal packet error to the network dispatcher, and it terminates the connection: `There was a critical exception handling a packet on channel DIMod`, then `Network Disconnect: A fatal error has occurred, this connection is terminated`. The client is left with no world and no player while the packets for both keep arriving, the integrated server stops because its only player left, and the loading screen sits at nought per cent. No crash report is written, because nothing crashed.
+
+It is a race, which is why it looks arbitrary. The first world entered in a session has to be generated, which takes long enough that the player exists before the packet is handled. A world entered afterwards is already on disk and opens in seconds, and the packet wins. A server that answers quickly produces the same race, so it reaches multiplayer too, on the second join of a session.
+
+`DamageIndicatorsNoticeTransformer` routes the six sends through a helper that checks first. The flags the same method sets are still set, and a client that does have a player still gets its three lines. Swapping a call site carries no branch, so no frame in the mod's own method is disturbed.
+
 ### Containers the server hardened
 
 The same shape recurs across the packs: the server patched the containers that are known duplication routes. All of them are carried above, in IndustrialCraft 2, AE2 Stuff, Twilight Forest, Thaumcraft and ExtraBotany.
