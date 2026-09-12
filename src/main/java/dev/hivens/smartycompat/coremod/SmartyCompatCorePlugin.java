@@ -33,6 +33,7 @@ public final class SmartyCompatCorePlugin implements IFMLLoadingPlugin {
             "dev.hivens.smartycompat.coremod.CacheOffHandTransformer",
             "dev.hivens.smartycompat.coremod.UncraftingTakeTransformer",
             "dev.hivens.smartycompat.coremod.HandMirrorOffHandTransformer",
+            "dev.hivens.smartycompat.coremod.HandbagSwapTransformer",
             "dev.hivens.smartycompat.coremod.RailcraftCallerClassTransformer"
         };
     }

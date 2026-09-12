@@ -94,6 +94,18 @@ The hand mirror container takes whatever sits in the selected hotbar slot and ca
 
 One half is deliberately left out. The server also nulls the field when neither hand holds a mirror, and closes the screen on that null elsewhere. The published release's other methods have never had to expect a null there, so carrying it would trade a cosmetic mismatch for a crash. A miss answers with the empty stack instead, which is what the release already puts there for an empty hand.
 
+### ExtraBotany
+
+Pressing a hotbar number while pointing at a slot swaps the two. Point at a slot inside an open handbag and press the number the handbag itself sits on, and the container is asked to move the bag into the inventory the bag is providing. The server's copy refuses that click outright. It also calls `detectAndSendChanges` at the end of a shift-click, which the published release leaves to whatever sends changes next.
+
+`HandbagSwapTransformer` carries both, in two different shapes, because the two changes are.
+
+The refusal is a method the published release does not have at all. `ContainerHandbag` inherits `slotClick` straight from `Container`, so there is no body to splice a branch into and the override is added whole instead. Being ours, its one branch and one merge come with the frame written out rather than recomputed, which is not the same risk as asking a transformer to recompute the frames of code somebody else compiled. The condition itself lives in ordinary Java and only the early return is bytecode. The bag is compared by identity, not equality, which is what makes the click self-referential: two identical bags in different slots are a different situation and are left alone.
+
+The notification is a plain insert after the existing `onTake`, with no branch and nothing to recompute. Both halves are skipped when the class already carries them, so a pack shipping the server's own jar is not patched twice.
+
+Patching the published release this way produces a class identical to the server's, instruction for instruction, apart from the condition being a call rather than inlined.
+
 ### Railcraft
 
 Railcraft asks who called it so it can register a `DataParameter` against that entity class:
@@ -111,13 +123,11 @@ The replacement was checked against the real thing: on a JDK 8, calling `sun.ref
 
 The patch is confined to Railcraft's own class on purpose. Rewriting every caller lookup in the game would also catch mods already built around the shifted numbering, and turn their working code into the bug this removes.
 
-### Containers the server hardened that are not carried yet
+### Containers the server hardened
 
-The same shape recurs across the packs: the server patched the containers that are known duplication routes. Three are carried above, in IndustrialCraft 2, AE2 Stuff and Twilight Forest, and Thaumcraft's with them. One more is measured but not ported, because it needs a branch inside an existing method rather than an append, which would mean recomputing stack map frames from inside a transformer.
+The same shape recurs across the packs: the server patched the containers that are known duplication routes. All of them are carried above, in IndustrialCraft 2, AE2 Stuff, Twilight Forest, Thaumcraft and ExtraBotany.
 
-- **ExtraBotany** handles `ClickType.SWAP` in `ContainerHandbag.slotClick`, which is the hotbar-key swap that otherwise duplicates the bag, and calls `detectAndSendChanges` from `transferStackInSlot`.
-
-It is client prediction only. The server holds the authoritative inventory and corrects the client on its next window update, so the symptom is a wrong-looking slot rather than a duplicated item.
+None of them is a duplication hole on an unpatched client. The server holds the authoritative inventory and corrects the client on its next window update, so the symptom is a wrong-looking slot rather than a duplicated item. They are carried because a client that predicts one thing and is corrected to another is the kind of desync players report as an item disappearing.
 
 ## Carried data
 
@@ -174,7 +184,9 @@ Every one of these releases also resolves cleanly against the rest of the pack. 
 
 Mixin is available in these packs, through MixinBooter on Forge and built in under Cleanroom, so this is a choice rather than a constraint.
 
-None of the patches here is a good fit for it. Two are descriptor and owner rewrites at a call site, which is the one thing mixin deliberately does not express. One splices a conjunction into a method that has to keep the enclosing try/finally and its stack map frames exactly as compiled. One replaces a method body outright, which mixin would do slightly more legibly, but not enough to take on a load-time dependency for.
+Most of the patches here are a poor fit for it. Two are descriptor and owner rewrites at a call site, which is the one thing mixin deliberately does not express. One splices a conjunction into a method that has to keep the enclosing try/finally and its stack map frames exactly as compiled. One replaces a method body outright, which mixin would do slightly more legibly, but not enough to take on a load-time dependency for.
+
+The handbag override is the one that would genuinely read better as a mixin. Adding a method to a target class is the case mixin handles best, and it would come with its frames computed rather than written out by hand. It is one method against three call-site rewrites mixin cannot express at all, so it goes the same way as the rest rather than splitting the mod across two mechanisms for it.
 
 The calculation changes if a patch grows past rewriting instructions into carrying real logic. That is what the helper class behind the Railcraft patch is for: the transformer moves a single call, and everything worth reading lives in ordinary Java next to it.
 
