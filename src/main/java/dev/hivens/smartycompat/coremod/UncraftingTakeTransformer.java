@@ -38,6 +38,10 @@ import org.objectweb.asm.tree.VarInsnNode;
  * IFEQ in the method that a plain load reaches, which is the branch between
  * uncrafting and crafting. The matrix is read through the field the class
  * itself declares.
+ *
+ * A jar that already settles the matrix has the return further out, with the
+ * settling in between, and does not match, so a pack midway through moving
+ * from the server's jars to the published ones cannot end up settling twice.
  */
 public final class UncraftingTakeTransformer implements IClassTransformer {
 
@@ -93,8 +97,16 @@ public final class UncraftingTakeTransformer implements IClassTransformer {
         return writer.toByteArray();
     }
 
-    /** The hand-off to the vanilla crafting slot, whose result the method returns. */
+    /**
+     * The hand-off to the vanilla crafting slot, whose result the method
+     * returns, and only when the method is the shape this patch was written
+     * for: one hand-off, reached from both paths, with the return immediately
+     * after it. A jar that already settles the matrix has a second hand-off
+     * for the crafting path and work between the first one and its return, and
+     * appending there would settle the matrix twice.
+     */
     private static MethodInsnNode superTake(MethodNode m) {
+        MethodInsnNode found = null;
         for (AbstractInsnNode insn : m.instructions.toArray()) {
             if (insn.getOpcode() != Opcodes.INVOKESPECIAL) {
                 continue;
@@ -102,10 +114,28 @@ public final class UncraftingTakeTransformer implements IClassTransformer {
             MethodInsnNode call = (MethodInsnNode) insn;
             if (SLOT_CRAFTING.equals(call.owner)
                 && call.desc.endsWith(")Lnet/minecraft/item/ItemStack;")) {
-                return call;
+                if (found != null) {
+                    return null;
+                }
+                found = call;
             }
         }
-        return null;
+        if (found == null) {
+            return null;
+        }
+        AbstractInsnNode next = realNext(found.getNext());
+        return next != null && next.getOpcode() == Opcodes.ARETURN ? found : null;
+    }
+
+    /**
+     * The next instruction that is one, skipping the labels, line numbers and
+     * frames a class compiled with debug information carries between them.
+     */
+    private static AbstractInsnNode realNext(AbstractInsnNode insn) {
+        while (insn != null && insn.getOpcode() < 0) {
+            insn = insn.getNext();
+        }
+        return insn;
     }
 
     /**

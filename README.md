@@ -129,6 +129,18 @@ The same shape recurs across the packs: the server patched the containers that a
 
 None of them is a duplication hole on an unpatched client. The server holds the authoritative inventory and corrects the client on its next window update, so the symptom is a wrong-looking slot rather than a duplicated item. They are carried because a client that predicts one thing and is corrected to another is the kind of desync players report as an item disappearing.
 
+### Installing it over the server's own jars
+
+A pack does not have to move to the published releases all at once. Repinning happens mod by mod, so for a while a pack holds some genuine jars and some of the server's, with this mod loaded over both.
+
+That is safe. Every patch here either finds no site to change in a jar that already carries the change, or leaves the behaviour where it already was:
+
+- Advanced Solar Panels, AE2 Stuff and Railcraft look for a call site the server's jar no longer has, so nothing matches
+- Ender IO rewrites the handler to the same body whichever version it started from
+- the Cache's write lands inside the branch the server's copy already made, and the hand mirror is resolved to the mirror the server's copy would have found, so both are fixed points
+- the batch crafter gains a second copy of a test the server's copy already makes, which cannot change the answer
+- the uncrafting table and the handbag are the two that would actually differ, and both check first and leave a jar that carries the change alone
+
 ## Carried data
 
 Not everything is code.
