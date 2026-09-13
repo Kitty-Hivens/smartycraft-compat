@@ -9,35 +9,41 @@ import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 
 /**
- * Ports Advanced Solar Panels 4.3.0 onto the IndustrialCraft 2 API it
- * meets in this pack.
+ * Ports the IndustrialCraft 2 addons in these packs onto the IC2 API they
+ * actually meet.
  *
- * ASP's last release is from December 2018 and was built against an
- * IC2 whose inventory slots were constructed from a TileEntityInventory.
- * Current IC2 takes the interface instead:
+ * Both were built against an IC2 whose inventory slots were constructed from a
+ * TileEntityInventory. Current IC2 takes the interface instead:
  *
  *     InvSlot(IInventorySlotHolder&lt;?&gt;, String, Access, int, InvSide)
  *     InvSlotOutput(IInventorySlotHolder&lt;?&gt;, String, int)
  *     InvSlotProcessable(IInventorySlotHolder&lt;?&gt;, String, int, IMachineRecipeManager)
  *
- * and the old overloads are gone, so the stock jar throws
- * NoSuchMethodError the moment a Molecular Assembler is built. Those
- * three call sites are the only unresolved references the release has
- * against the IC2 this pack ships.
+ * and the old overloads are gone, so a stock jar throws NoSuchMethodError the
+ * moment one of its machines is built. In Advanced Solar Panels, whose last
+ * release is from December 2018, those three call sites are the only unresolved
+ * references it has against the IC2 this pack ships. Advanced Machines, by the
+ * same author, carries the same three in its heating machine, and the server's
+ * copy of it differs from the published 61.0.1 in that one class and nothing
+ * else.
  *
  * The fix is a descriptor rewrite, not a code change: TileEntityInventory
- * implements IInventorySlotHolder directly, so the value already on the
- * stack satisfies the new parameter and the verifier is content. Nothing
- * about the mod's behaviour moves.
+ * implements IInventorySlotHolder directly, so the value already on the stack
+ * satisfies the new parameter and the verifier is content. Nothing about either
+ * mod's behaviour moves.
  *
- * Narrow on purpose. Only constructor calls are considered, only when
- * the owner is one of IC2's slot classes, and only inside ASP's own
- * package -- a blanket descriptor substitution across every class the
- * game loads would be a much larger promise than this needs to make.
+ * Narrow on purpose. Only constructor calls are considered, only when the owner
+ * is one of IC2's slot classes, and only inside the two packages named here -- a
+ * blanket descriptor substitution across every class the game loads would be a
+ * much larger promise than this needs to make.
  */
-public final class AdvancedSolarSlotApiTransformer implements IClassTransformer {
+public final class Ic2SlotHolderTransformer implements IClassTransformer {
 
-    private static final String TARGET_PACKAGE = "com.chocohead.advsolar.";
+    /** The two addons this reaches, both by the same author and both rebuilt. */
+    private static final String[] TARGET_PACKAGES = {
+        "com.chocohead.advsolar.",
+        "com.chocohead.AdvMachines.",
+    };
 
     private static final String SLOT_PACKAGE = "ic2/core/block/invslot/";
 
@@ -46,10 +52,18 @@ public final class AdvancedSolarSlotApiTransformer implements IClassTransformer 
 
     private static final String CTOR = "<init>";
 
+    private static boolean isTarget(String transformedName) {
+        for (String pkg : TARGET_PACKAGES) {
+            if (transformedName.startsWith(pkg)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public byte[] transform(String name, String transformedName, byte[] basicClass) {
-        if (basicClass == null || transformedName == null
-            || !transformedName.startsWith(TARGET_PACKAGE)) {
+        if (basicClass == null || transformedName == null || !isTarget(transformedName)) {
             return basicClass;
         }
 

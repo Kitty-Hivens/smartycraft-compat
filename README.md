@@ -32,13 +32,25 @@ Ender IO ships as eleven mod ids, and ten of its classes carry a handler of thei
 
 `EnderIOVersionCheckTransformer` rewrites every class in Ender IO's package tree that declares the method, and reads the mod id each handler demands out of its own body rather than assuming they all ask after the base mod. The body becomes the presence half of the original test: the other side must still have that module, only the version equality is dropped. A blind `true` would also accept a server without it, which the original never did.
 
-### Advanced Solar Panels
+### IndustrialCraft 2 addons rebuilt against a newer API
 
-The shipped jar is a recompile of release 4.3.0 against a newer IndustrialCraft 2 API. Its inventory slots are constructed from `IInventorySlotHolder` where 4.3.0 passes `TileEntityInventory`, and the old overloads are gone, so stock 4.3.0 throws `NoSuchMethodError` the moment a Molecular Assembler is built.
+Two of the pack's IC2 addons are not the published releases, and neither is a relabel. Each is the genuine release with one class recompiled, because IC2 changed an API under them and the old signatures are gone. A pack that installs the real jars gets `NoSuchMethodError` rather than a version disagreement.
 
-`AdvancedSolarSlotApiTransformer` rewrites those three constructor descriptors. `TileEntityInventory` implements `IInventorySlotHolder`, so the value already on the stack satisfies the new parameter and nothing about the mod's behaviour moves.
+Both meet the same change. IC2's inventory slots used to be constructed from a `TileEntityInventory` and now take the interface:
 
-That is the whole difference. Comparing the two jars method by method turns up nothing else: the remaining apparent changes are synthetic bridge methods that a decompile and recompile round trip rebuilt in a different shape, and the bodies they forward to are identical.
+```
+InvSlot(IInventorySlotHolder<?>, String, Access, int, InvSide)
+InvSlotOutput(IInventorySlotHolder<?>, String, int)
+InvSlotProcessable(IInventorySlotHolder<?>, String, int, IMachineRecipeManager)
+```
+
+**Advanced Solar Panels** last shipped in December 2018, and those three call sites are the only unresolved references it has against the IC2 in the pack. **Advanced Machines**, by the same author, carries the same three in its heating machine: the server's copy differs from the published 61.0.1 in that one class and in nothing else at all, 191 of 192 entries byte for byte.
+
+`Ic2SlotHolderTransformer` handles both. It is a descriptor rewrite rather than a code change, since `TileEntityInventory` implements `IInventorySlotHolder` directly, so the value already on the stack satisfies the new parameter and nothing about either mod's behaviour moves. Only constructor calls are considered, only when the owner is one of IC2's slot classes, and only inside those two packages: a blanket descriptor substitution across every class the game loads would be a far larger promise than this needs to make.
+
+Patching the published Advanced Machines this way produces a class identical to the server's, instruction for instruction, apart from an assertion message its build dropped.
+
+Neither addon needs a handshake spoof. Each declares the same version as the release it was built from, which is why nothing about them looked wrong until their bytes were compared.
 
 ### IndustrialCraft 2
 
@@ -176,7 +188,7 @@ A pack does not have to move to the published releases all at once. Repinning ha
 
 That is safe. Every patch here either finds no site to change in a jar that already carries the change, or leaves the behaviour where it already was:
 
-- Advanced Solar Panels, AE2 Stuff and Railcraft look for a call site the server's jar no longer has, so nothing matches
+- the two IC2 addons, AE2 Stuff and Railcraft look for a call site the server's jar no longer has, so nothing matches
 - Ender IO rewrites the handler to the same body whichever version it started from
 - the Cache's write lands inside the branch the server's copy already made, and the hand mirror is resolved to the mirror the server's copy would have found, so both are fixed points
 - the batch crafter gains a second copy of a test the server's copy already makes, which cannot change the answer
@@ -231,7 +243,7 @@ Most of the rebuilt jars turned out to need nothing. Comparing each against the 
 
 Applied Energistics was the one worth checking closely, because the pattern terminal's buttons send a value to the server. Both builds send the same two literals, the release through named constants and the server's copy inlined, so there is nothing to reconcile.
 
-Every one of these releases also resolves cleanly against the rest of the pack. Advanced Solar Panels is the single exception, and its three unresolved references are the ones patched above.
+Every one of these releases also resolves cleanly against the rest of the pack. The two IC2 addons are the exception, and their unresolved references are the ones patched above.
 
 ## Why no mixins
 
