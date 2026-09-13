@@ -223,6 +223,12 @@ Industrial needs the same minus Ender IO and Matter Overdrive. Everything else i
 
 One entry needs care: Galaxy's server registers `micdoodlecore` with an empty version, and an omitted entry reads as the mod being absent rather than as having no version. The generated config keeps it, and hidemymods carries an empty version through to the wire rather than treating the entry as malformed.
 
+### Which genuine file stands behind each pin
+
+Identifying one modified jar means comparing it against every published release of its project, entry by entry, and the conclusion is three words long. [`pack/genuine/`](pack/genuine/) is where those three words are written down, one record per pack, for every mod it ships: whether the pinned jar is the publisher's own file and, when it is not, which release it was built from, what differs, and whether a transformer here already covers the difference.
+
+Half of it is fetched fresh from the mirror on every run, since whose file a given sha1 is has an authoritative answer. The other half cannot be re-derived from any API and is committed beside the script that merges them. Its README covers the schema.
+
 ### IC2 recipes
 
 IC2 reads `config/ic2/<name>.ini` from the instance directory and falls back to the jar asset only when that file is absent or unreadable, so the server's recipe set transfers as a plain file. [`pack/config/ic2/macerator.ini`](pack/config/ic2/macerator.ini) is that file, copied verbatim out of the server's jar, and belongs in the pack as an asset rather than in this jar. It differs from upstream in four ways:
