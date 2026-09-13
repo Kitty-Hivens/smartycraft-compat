@@ -28,6 +28,7 @@ public final class SmartyCompatCorePlugin implements IFMLLoadingPlugin {
         return new String[] {
             "dev.hivens.smartycompat.coremod.EnderIOVersionCheckTransformer",
             "dev.hivens.smartycompat.coremod.Ic2SlotHolderTransformer",
+            "dev.hivens.smartycompat.coremod.SemiFluidFuelWidenTransformer",
             "dev.hivens.smartycompat.coremod.BatchCrafterSlotFilterTransformer",
             "dev.hivens.smartycompat.coremod.InscriberMatchTransformer",
             "dev.hivens.smartycompat.coremod.CacheOffHandTransformer",

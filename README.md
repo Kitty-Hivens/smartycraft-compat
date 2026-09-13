@@ -34,9 +34,9 @@ Ender IO ships as eleven mod ids, and ten of its classes carry a handler of thei
 
 ### IndustrialCraft 2 addons rebuilt against a newer API
 
-Two of the pack's IC2 addons are not the published releases, and neither is a relabel. Each is the genuine release with one class recompiled, because IC2 changed an API under them and the old signatures are gone. A pack that installs the real jars gets `NoSuchMethodError` rather than a version disagreement.
+Three of the pack's IC2 addons are not the published releases, and none of them is a relabel. Each is the genuine release with one or two classes recompiled, because IC2 changed an API under them and the old signatures are gone. A pack that installs the real jars gets `NoSuchMethodError` rather than a version disagreement.
 
-Both meet the same change. IC2's inventory slots used to be constructed from a `TileEntityInventory` and now take the interface:
+Two of them meet the same change. IC2's inventory slots used to be constructed from a `TileEntityInventory` and now take the interface:
 
 ```
 InvSlot(IInventorySlotHolder<?>, String, Access, int, InvSide)
@@ -50,7 +50,11 @@ InvSlotProcessable(IInventorySlotHolder<?>, String, int, IMachineRecipeManager)
 
 Patching the published Advanced Machines this way produces a class identical to the server's, instruction for instruction, apart from an assertion message its build dropped.
 
-Neither addon needs a handshake spoof. Each declares the same version as the release it was built from, which is why nothing about them looked wrong until their bytes were compared.
+**BC Fuels For IC2** meets a different one. It registers its eight fuels through `ISemiFluidFuelManager.addFluid(String, int, double)` and current IC2 declares only `addFluid(String, long, long)`, so the stock jar throws while registering the first fuel. Here the server's copy differs from the published v0.2 in one class, six of seven entries byte for byte.
+
+A descriptor rewrite is not enough for this one: the arguments are of the wrong kinds, not merely of the wrong declared types, so `SemiFluidFuelWidenTransformer` widens them. The double sits above the int on the stack, so it is parked in a scratch local while the int underneath is widened, then brought back and widened in place. Truncating the energy is what the newer API asks for, and every value this mod passes comes from its own config as a whole number anyway. No branch and no jump target, so nothing in the method's frames is disturbed.
+
+None of the three needs a handshake spoof. Each declares the same version as the release it was built from, which is why nothing about them looked wrong until their bytes were compared.
 
 ### IndustrialCraft 2
 
@@ -188,7 +192,7 @@ A pack does not have to move to the published releases all at once. Repinning ha
 
 That is safe. Every patch here either finds no site to change in a jar that already carries the change, or leaves the behaviour where it already was:
 
-- the two IC2 addons, AE2 Stuff and Railcraft look for a call site the server's jar no longer has, so nothing matches
+- the three IC2 addons, AE2 Stuff and Railcraft look for a call site the server's jar no longer has, so nothing matches
 - Ender IO rewrites the handler to the same body whichever version it started from
 - the Cache's write lands inside the branch the server's copy already made, and the hand mirror is resolved to the mirror the server's copy would have found, so both are fixed points
 - the batch crafter gains a second copy of a test the server's copy already makes, which cannot change the answer
@@ -243,7 +247,7 @@ Most of the rebuilt jars turned out to need nothing. Comparing each against the 
 
 Applied Energistics was the one worth checking closely, because the pattern terminal's buttons send a value to the server. Both builds send the same two literals, the release through named constants and the server's copy inlined, so there is nothing to reconcile.
 
-Every one of these releases also resolves cleanly against the rest of the pack. The two IC2 addons are the exception, and their unresolved references are the ones patched above.
+Every one of these releases also resolves cleanly against the rest of the pack. The three IC2 addons are the exception, and their unresolved references are the ones patched above.
 
 ## Why no mixins
 
