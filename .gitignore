@@ -23,3 +23,6 @@ run/
 eclipse/
 out/
 bin/
+
+# CurseForge API key read by pack/genuine/stale.py
+.cfkey
