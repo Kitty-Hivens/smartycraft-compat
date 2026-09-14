@@ -24,5 +24,6 @@ eclipse/
 out/
 bin/
 
-# CurseForge API key read by pack/genuine/stale.py
+# Local only, never published
+pack/
 .cfkey
