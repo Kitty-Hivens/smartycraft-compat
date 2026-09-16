@@ -190,6 +190,23 @@ The mod is inconsistent rather than Windows-only. The same method writes `pack.m
 
 Nothing here is about the server. This is the second patch of that kind, after Damage Indicators, and neither needs the server to be involved at all.
 
+### The Aether and the Betweenlands, over the main menu
+
+Both mods replace the main menu, and out of the box the argument has no winner because only one of them is actually arguing.
+
+The Betweenlands replaces anything that is a `GuiMainMenu` and is not already its own, on every screen opened, unconditionally. The Aether adds its toggle button to any screen that is a `GuiMainMenu`, then decides whether to install its own menu by asking whether the screen's class is *exactly* `GuiMainMenu`. Those two tests disagree about what a main menu is, and the Betweenlands' menu sits in the gap: it extends `GuiMainMenu`, so the Aether draws its button on it, and the Aether's replacement never fires however the button is set. Pressing it flips a config value and nothing else happens.
+
+Fixing the Aether's test alone is not enough. Its own menu extends `GuiMainMenu` too, so the Betweenlands would swap it away the moment it appeared, and a plain `instanceof` would also have the Aether reopen the screen it had just opened, forever. The original exact-class comparison ruled that out by accident.
+
+Two patches, one clause each, and neither is any use alone:
+
+- `AetherMenuTakeoverTransformer` turns the exact-class test into "a main menu that is not already the Aether's own", which is what it was reaching for. The site is found by the only class constant of `GuiMainMenu` the class loads, between the `getClass` that produced the left side and the reference comparison that consumes both.
+- `BetweenlandsMainMenuTransformer` adds a fourth clause to the test the handler already makes, excluding the Aether's menu the way the Betweenlands already excludes its own. It jumps to the label the existing clauses jump to, so the method gains no jump target.
+
+The Aether's menu is named through a helper rather than referenced, so both hold in a pack that does not ship it: there the name never matches and the behaviour is what it was.
+
+This one is not carried from anywhere. SmartyCraft turned both menus off in its configs and never faced the question.
+
 ### Containers the server hardened
 
 The same shape recurs across the packs: the server patched the containers that are known duplication routes. All of them are carried above, in IndustrialCraft 2, AE2 Stuff, Twilight Forest, Thaumcraft and ExtraBotany.
