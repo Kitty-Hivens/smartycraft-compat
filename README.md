@@ -180,6 +180,16 @@ It is a race, which is why it looks arbitrary. The first world entered in a sess
 
 `DamageIndicatorsNoticeTransformer` routes the six sends through a helper that checks first. The flags the same method sets are still set, and a client that does have a player still gets its three lines. Swapping a call site carries no branch, so no frame in the mod's own method is disturbed.
 
+### The Aether
+
+Aether Legacy writes a "Aether b1.7.3 Textures" resource pack into the resourcepacks folder on first run, on by default, and it builds the four item directories it needs by pasting backslashes into a path. A backslash is an ordinary filename character on every system except Windows, so on Linux those are not four directories but one, whose name contains the whole rest of the path.
+
+The mod is inconsistent rather than Windows-only. The same method writes `pack.mcmeta` and `pack.png` through a forward slash two lines further down, so the pack directory itself is created correctly and only the item textures go astray. A forward slash is accepted by Windows too, which is why the fix makes the four strings agree with the rest of the method rather than asking the platform for its separator.
+
+`AetherTexturePackPathTransformer` rewrites every string constant in the proxy that names the pack directory and carries a backslash, which is four of them. The literals are not repeated in the transformer: they are long, the mod has changed them between releases, and one that no longer matched would fail silently. Patched, the published class decompiles to the same source as the server's own build.
+
+Nothing here is about the server. This is the second patch of that kind, after Damage Indicators, and neither needs the server to be involved at all.
+
 ### Containers the server hardened
 
 The same shape recurs across the packs: the server patched the containers that are known duplication routes. All of them are carried above, in IndustrialCraft 2, AE2 Stuff, Twilight Forest, Thaumcraft and ExtraBotany.
