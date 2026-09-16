@@ -40,7 +40,8 @@ public final class SmartyCompatCorePlugin implements IFMLLoadingPlugin {
             "dev.hivens.smartycompat.coremod.RailcraftCallerClassTransformer",
             "dev.hivens.smartycompat.coremod.AetherTexturePackPathTransformer",
             "dev.hivens.smartycompat.coremod.AetherMenuTakeoverTransformer",
-            "dev.hivens.smartycompat.coremod.BetweenlandsMainMenuTransformer"
+            "dev.hivens.smartycompat.coremod.BetweenlandsMainMenuTransformer",
+            "dev.hivens.smartycompat.coremod.RatsPlagueDoctorTransformer"
         };
     }
 

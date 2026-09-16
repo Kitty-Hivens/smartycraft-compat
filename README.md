@@ -207,6 +207,21 @@ The Aether's menu is named through a helper rather than referenced, so both hold
 
 This one is not carried from anywhere. SmartyCraft turned both menus off in its configs and never faced the question.
 
+### Rats, and a registry entry the published jar never creates
+
+Rats ships a plague doctor: the entity, its renderer, its trade, its village structure and a `RatsVillageRegistry.PLAGUE_DOCTOR` profession. `CommonProxy.registerVillagers` then registers only the pet shop owner. The profession is dead content in the published jar, built and never handed to the registry.
+
+That stays invisible until a server fixes it. The RPG server's copy adds the one missing call, so its world holds `rats:plague_doctor` as villager profession 7, and a client on the published jar has nothing to answer with:
+
+```
+Registry VillagerProfession: Found a missing id from the world rats:plague_doctor
+Network Disconnect: Fatally missing registry entries
+```
+
+**A handshake spoof could never have covered this one, and that is what makes it different from everything above.** The rest of this mod reconciles what the two sides *say* about themselves. This is the registry sync, which compares what they actually built, and no claim about a version changes it: the client has to create the entry for real.
+
+`RatsPlagueDoctorTransformer` appends the call the method is missing, in front of the return it already has, so no jump target is added. The method is found by the profession it does register rather than by name, and a jar already making the call is left alone. Patched, the published class decompiles to the same source as the server's own build.
+
 ### Containers the server hardened
 
 The same shape recurs across the packs: the server patched the containers that are known duplication routes. All of them are carried above, in IndustrialCraft 2, AE2 Stuff, Twilight Forest, Thaumcraft and ExtraBotany.
