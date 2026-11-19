@@ -222,6 +222,29 @@ Network Disconnect: Fatally missing registry entries
 
 `RatsPlagueDoctorTransformer` appends the call the method is missing, in front of the return it already has, so no jump target is added. The method is found by the profession it does register rather than by name, and a jar already making the call is left alone. Patched, the published class decompiles to the same source as the server's own build.
 
+### TexFix, and a texture reload on the wrong thread
+
+TexFix 4.0 saves memory by freeing the frame data of every still sprite once the textures are stitched, and reads it back from disk the first time anything asks for it, on whatever thread asked. For a plain sprite that is a file read. For a sprite with a custom loader it is a second call to that loader, which Forge only ever makes while stitching, on the render thread with an OpenGL context. Railcraft's loader registers a texture there.
+
+JourneyMap samples block colours from a worker thread of its own. When it reached a rail, TexFix called Railcraft's loader from that thread, the loader called `glGenTextures` without a context, and the JVM aborted:
+
+```
+FATAL ERROR in native method: Thread[JM-task-4]: No context is current ...
+  at org.lwjgl.opengl.GL11.glGenTextures
+  at mods.railcraft.client.util.textures.TextureAtlasSheet.load
+  at texFix.TextureFix.reloadTextureData
+  at journeymap.client.cartography.color.ColorManager.getAverageColor
+```
+
+The published TexFix has no newer release and no source to report it to. `TexFixLoadGuardTransformer` makes two rewrites, each one instruction swapped for a static call that leaves the operand stack as it was:
+
+- the check that keeps animated sprites out of the scheme also keeps out sprites with a custom loader, so their frames stay in memory as they would without TexFix, and every other sprite is freed as before
+- the queue of sprites to free again, a plain `LinkedList` that a reload appends to from any thread while the client tick drains it, has its four calls made under the list's monitor
+
+Nothing here names a TexFix class. The transformer matches on the class name it is offered and the runtime side touches only Minecraft's types and the list it is handed, so in a pack without TexFix nothing matches and nothing changes.
+
+This one is not carried from anywhere either. It fixes the published jar for our players.
+
 ### Containers the server hardened
 
 The same shape recurs across the packs: the server patched the containers that are known duplication routes. All of them are carried above, in IndustrialCraft 2, AE2 Stuff, Twilight Forest, Thaumcraft and ExtraBotany.
